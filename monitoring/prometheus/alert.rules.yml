@@ -1,0 +1,38 @@
+groups:
+  - name: redstone_alerts
+    rules:
+      - alert: RedStoneHighServerErrorRate
+        expr: (sum(rate(redstone_http_errors_total{error_type="server_error"}[5m])) / (sum(rate(redstone_http_requests_total[5m])) > 0)) * 100 > 5
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High HTTP 5xx error rate (> 5% for 5 minutes)"
+          description: "RedStone API server errors exceed 5% of total traffic over the last 5 minutes."
+
+      - alert: RedStoneHighLatencyP95
+        expr: histogram_quantile(0.95, sum by (le) (rate(redstone_http_request_duration_seconds_bucket[5m]))) > 1.0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High P95 latency (> 1s for 5 minutes)"
+          description: "The 95th percentile latency of RedStone API endpoints exceeds 1.0 second."
+
+      - alert: RedStoneDatabaseDisconnected
+        expr: redstone_database_status == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Database connectivity is down"
+          description: "RedStone API readiness checks report PostgreSQL database is unavailable."
+
+      - alert: RedStoneServiceDown
+        expr: up{job=~"redstone-api.*"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "RedStone API instance unreachable"
+          description: "Prometheus cannot scrape the RedStone API /metrics endpoint."

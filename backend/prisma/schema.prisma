@@ -1,0 +1,45 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String      @id @default(uuid())
+  email        String      @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  timetables   Timetable[]
+}
+
+model Timetable {
+  id        String           @id @default(uuid())
+  name      String           @default("My Timetable")
+  fileUrl   String?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entries   TimetableEntry[]
+}
+
+model TimetableEntry {
+  id          String    @id @default(uuid())
+  timetableId String
+  subject     String
+  dayOfWeek   Int
+  startTime   String
+  endTime     String
+  room        String?
+  faculty     String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  timetable   Timetable @relation(fields: [timetableId], references: [id], onDelete: Cascade)
+
+  @@index([timetableId, dayOfWeek, startTime])
+}
