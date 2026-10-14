@@ -7,9 +7,13 @@
  *   use the makeAuthenticatedRequest helper which reads the token automatically.
  */
 
-export const API_BASE_URL =
+const rawBaseUrl =
   (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL) ||
   'http://localhost:4000/api';
+
+export const API_BASE_URL = rawBaseUrl.replace(/\/+$/, '').endsWith('/api')
+  ? rawBaseUrl.replace(/\/+$/, '')
+  : `${rawBaseUrl.replace(/\/+$/, '')}/api`;
 
 /**
  * Custom error representing failed API requests.
