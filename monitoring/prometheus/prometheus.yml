@@ -24,7 +24,7 @@ scrape_configs:
     # If METRICS_TOKEN is set on Render, uncomment the bearer_token line or pass via header
     # bearer_token: "YOUR_METRICS_TOKEN"
     static_configs:
-      - targets: ["redstone-api.onrender.com"]
+      - targets: ["redstone-ugwp.onrender.com"]
         labels:
           environment: "production"
           service: "redstone-backend"

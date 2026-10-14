@@ -27,10 +27,9 @@ app.use(
       if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes("*")) {
         return callback(null, true);
       }
-      // Optional support for Vercel preview branch deployments
+      // Support Vercel deployments (e.g. https://red-stone-nine.vercel.app and preview branches)
       if (
-        process.env.ALLOW_VERCEL_PREVIEWS === "true" &&
-        /^https:\/\/redstone[a-z0-9-]*\.vercel\.app$/.test(origin)
+        /^https:\/\/(?:redstone|red-stone)[a-z0-9-]*\.vercel\.app$/.test(origin)
       ) {
         return callback(null, true);
       }
