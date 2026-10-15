@@ -1,7 +1,8 @@
-import { FileText, FileSpreadsheet, X, UploadCloud, RefreshCw } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { FileText, FileSpreadsheet, Image as ImageIcon, X, UploadCloud, RefreshCw } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
-import { formatFileSize, getFileTypeLabel } from '../../services/upload.service.js';
+import { formatFileSize, getFileTypeLabel, isImageFile } from '../../services/upload.service.js';
 
 /**
  * SelectedFile — displays metadata of the currently selected file with controls to remove, replace, or upload.
@@ -20,8 +21,28 @@ export function SelectedFile({
   onRemove,
   onChange,
 }) {
+  const [imagePreviewUrl, setImagePreviewUrl] = useState(null);
+
+  useEffect(() => {
+    if (!file) {
+      setImagePreviewUrl(null);
+      return;
+    }
+
+    if (file.type?.startsWith('image/') || isImageFile(file)) {
+      const url = URL.createObjectURL(file);
+      setImagePreviewUrl(url);
+      return () => {
+        URL.revokeObjectURL(url);
+      };
+    } else {
+      setImagePreviewUrl(null);
+    }
+  }, [file]);
+
   if (!file) return null;
 
+  const isImage = file.type?.startsWith('image/') || isImageFile(file);
   const isSpreadsheet = file.name.endsWith('.xlsx') || file.name.endsWith('.csv');
   const typeLabel = getFileTypeLabel(file);
   const sizeFormatted = formatFileSize(file.size);
@@ -33,14 +54,26 @@ export function SelectedFile({
       aria-label="Selected timetable file"
     >
       <div className="flex items-start justify-between gap-4">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="w-12 h-12 rounded-control bg-primary-soft text-primary flex items-center justify-center shrink-0">
-            {isSpreadsheet ? (
-              <FileSpreadsheet className="w-6 h-6" />
-            ) : (
-              <FileText className="w-6 h-6" />
-            )}
-          </div>
+        <div className="flex items-center gap-3.5 min-w-0">
+          {imagePreviewUrl ? (
+            <div className="w-14 h-14 rounded-control overflow-hidden border border-border shrink-0 bg-primary-soft/30 flex items-center justify-center">
+              <img
+                src={imagePreviewUrl}
+                alt="Timetable preview"
+                className="w-full h-full object-cover"
+              />
+            </div>
+          ) : (
+            <div className="w-12 h-12 rounded-control bg-primary-soft text-primary flex items-center justify-center shrink-0">
+              {isImage ? (
+                <ImageIcon className="w-6 h-6" />
+              ) : isSpreadsheet ? (
+                <FileSpreadsheet className="w-6 h-6" />
+              ) : (
+                <FileText className="w-6 h-6" />
+              )}
+            </div>
+          )}
 
           <div className="min-w-0 space-y-1">
             <h4
@@ -57,8 +90,8 @@ export function SelectedFile({
           </div>
         </div>
 
-        <Badge variant="primary" size="sm">
-          Ready to Extract
+        <Badge variant={isImage ? "primary" : "primary"} size="sm">
+          {isImage ? "OCR Ready" : "Ready to Extract"}
         </Badge>
       </div>
 

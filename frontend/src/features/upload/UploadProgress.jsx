@@ -1,16 +1,26 @@
-import { Loader2, Sparkles, FileSearch } from 'lucide-react';
+import { Loader2, Sparkles, FileSearch, ScanText } from 'lucide-react';
 
 /**
  * UploadProgress — displays an indeterminate animated progress state during upload and server extraction.
  *
  * @param {object} props
  * @param {string} [props.fileName]
+ * @param {boolean} [props.isImage=false]
  * @param {string} [props.statusMessage]
  */
 export function UploadProgress({
   fileName,
-  statusMessage = 'Uploading and parsing document structure...',
+  isImage = false,
+  statusMessage,
 }) {
+  const defaultStatus = isImage
+    ? 'Running Optical Character Recognition (OCR)... Scanning timetable grid, days, and time slots.'
+    : 'Uploading and parsing document structure...';
+
+  const title = isImage
+    ? `Scanning Image: ${fileName || 'Timetable'}`
+    : `Processing ${fileName || 'Timetable Document'}`;
+
   return (
     <div
       role="status"
@@ -23,10 +33,10 @@ export function UploadProgress({
         </div>
         <div className="space-y-0.5 min-w-0">
           <h4 className="text-sm font-semibold text-foreground">
-            Processing {fileName || 'Timetable Document'}
+            {title}
           </h4>
           <p className="text-xs text-foreground-muted">
-            {statusMessage}
+            {statusMessage || defaultStatus}
           </p>
         </div>
       </div>
@@ -38,12 +48,16 @@ export function UploadProgress({
 
       <div className="flex items-center justify-between text-[11px] text-foreground-muted pt-1">
         <span className="flex items-center gap-1.5">
-          <FileSearch className="w-3.5 h-3.5 text-primary" />
-          Detecting days, class times, and rooms
+          {isImage ? (
+            <ScanText className="w-3.5 h-3.5 text-primary" />
+          ) : (
+            <FileSearch className="w-3.5 h-3.5 text-primary" />
+          )}
+          {isImage ? 'Detecting OCR text & class cells' : 'Detecting days, class times, and rooms'}
         </span>
         <span className="flex items-center gap-1">
           <Sparkles className="w-3 h-3 text-primary" />
-          Synchronous extraction
+          {isImage ? 'Tesseract OCR' : 'Synchronous extraction'}
         </span>
       </div>
     </div>
@@ -51,3 +65,4 @@ export function UploadProgress({
 }
 
 export default UploadProgress;
+

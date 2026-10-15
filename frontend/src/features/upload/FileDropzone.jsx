@@ -1,5 +1,5 @@
 import { useState, useRef, useId } from 'react';
-import { UploadCloud, FileSpreadsheet, FileText } from 'lucide-react';
+import { UploadCloud, FileSpreadsheet, FileText, Image as ImageIcon } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import {
   ACCEPTED_FILE_TYPES_STRING,
@@ -117,11 +117,11 @@ export function FileDropzone({ onFileSelected, disabled = false }) {
 
       {/* Main Instruction */}
       <h3 className="text-base font-semibold text-foreground text-center">
-        {isDragOver ? 'Drop your timetable file here' : 'Drag & drop your timetable file here'}
+        {isDragOver ? 'Drop your timetable file or image here' : 'Drag & drop your timetable file or image here'}
       </h3>
 
       <p className="text-xs sm:text-sm text-foreground-muted mt-1 text-center max-w-md">
-        Upload your institutional routine document to automatically extract and structure your class schedule.
+        Upload your institutional routine document or timetable image to automatically extract and structure your class schedule using OCR.
       </p>
 
       {/* File-Picker Button */}
@@ -139,6 +139,11 @@ export function FileDropzone({ onFileSelected, disabled = false }) {
 
       {/* Format & Constraints Pill */}
       <div className="mt-6 flex flex-wrap items-center justify-center gap-3 text-[11px] text-foreground-muted">
+        <span className="flex items-center gap-1 font-medium">
+          <ImageIcon className="w-3.5 h-3.5 text-primary" />
+          Images (.png, .jpg, .webp)
+        </span>
+        <span className="text-border">•</span>
         <span className="flex items-center gap-1 font-medium">
           <FileText className="w-3.5 h-3.5 text-primary" />
           PDF (.pdf)

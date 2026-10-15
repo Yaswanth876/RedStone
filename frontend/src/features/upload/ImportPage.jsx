@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import {
   FileText,
   FileSpreadsheet,
+  Image as ImageIcon,
   AlertCircle,
   Calendar,
   CheckCircle2,
@@ -21,6 +22,8 @@ import {
   saveExtractionSession,
   formatFileSize,
   MAX_FILE_SIZE_BYTES,
+  isImageFile,
+  ACCEPTED_FILE_TYPES_STRING,
 } from '../../services/upload.service.js';
 import { FileDropzone } from './FileDropzone.jsx';
 import { SelectedFile } from './SelectedFile.jsx';
@@ -125,9 +128,11 @@ export function ImportPage() {
         )}.`;
       } else if (err.status === 415) {
         friendlyMessage = 'The uploaded file format is unsupported by the server parser.';
+      } else if (err.status === 504) {
+        friendlyMessage = 'OCR processing timed out. Please try uploading a clearer, higher-contrast, or cropped image.';
       } else if (err.status === 422) {
         friendlyMessage =
-          'The document could not be parsed into recognizable timetable tables. Try a CSV/Excel export or enter classes manually.';
+          'The document or image could not be parsed into recognizable timetable entries. Try a clearer image, CSV/Excel export, or enter classes manually.';
       }
 
       setUploadError(friendlyMessage);
@@ -155,10 +160,10 @@ export function ImportPage() {
       {/* Page Header */}
       <PageHeader
         title="Import Your Timetable"
-        description="Upload an existing routine document to automatically extract and populate your weekly classes."
+        description="Upload an existing routine document or timetable photo to automatically extract and populate your weekly classes."
         badge={
           <Badge variant="primary" size="sm">
-            Automated Ingestion
+            Automated Ingestion &amp; OCR
           </Badge>
         }
         actions={
@@ -178,9 +183,9 @@ export function ImportPage() {
             <CardHeader className="border-b border-border/70 pb-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="text-base">Document Upload &amp; Extraction</CardTitle>
+                  <CardTitle className="text-base">Document &amp; Image Upload</CardTitle>
                   <p className="text-xs text-foreground-muted mt-0.5">
-                    Drag your file below or pick from your local storage.
+                    Drag your timetable file or image below or pick from your local storage.
                   </p>
                 </div>
                 {extractionResult && (
@@ -233,7 +238,7 @@ export function ImportPage() {
                       type="button"
                       variant="ghost"
                       size="sm"
-                      onClick={handleReset}
+                      onClick={handleRemoveFile}
                     >
                       Choose Different File
                     </Button>
@@ -268,8 +273,7 @@ export function ImportPage() {
                         onChange={() => {
                           const input = document.createElement('input');
                           input.type = 'file';
-                          input.accept =
-                            '.pdf,.csv,.xlsx,application/pdf,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+                          input.accept = ACCEPTED_FILE_TYPES_STRING;
                           input.onchange = (e) => {
                             if (e.target.files?.[0]) {
                               handleFileSelected(e.target.files[0]);
@@ -281,7 +285,10 @@ export function ImportPage() {
 
                       {/* Processing Indicator */}
                       {isUploading && (
-                        <UploadProgress fileName={selectedFile.name} />
+                        <UploadProgress
+                          fileName={selectedFile.name}
+                          isImage={isImageFile(selectedFile)}
+                        />
                       )}
                     </div>
                   )}
@@ -301,12 +308,24 @@ export function ImportPage() {
             <CardContent className="space-y-4 pt-4">
               <div className="flex items-start gap-3 text-xs text-foreground">
                 <div className="w-8 h-8 rounded-control bg-primary-soft text-primary flex items-center justify-center shrink-0">
+                  <ImageIcon className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="font-semibold">Timetable Images (.png, .jpg, .webp)</span>
+                  <p className="text-foreground-muted text-[11px] mt-0.5">
+                    Clear photos or screenshots of routine tables processed using Optical Character Recognition (OCR).
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 text-xs text-foreground">
+                <div className="w-8 h-8 rounded-control bg-primary-soft text-primary flex items-center justify-center shrink-0">
                   <FileText className="w-4 h-4" />
                 </div>
                 <div>
                   <span className="font-semibold">PDF Timetables (.pdf)</span>
                   <p className="text-foreground-muted text-[11px] mt-0.5">
-                    Official digital institutional schedules with text tables. Scanned images require OCR.
+                    Official digital institutional schedules with text tables.
                   </p>
                 </div>
               </div>
@@ -337,7 +356,7 @@ export function ImportPage() {
 
               <div className="pt-3 border-t border-border/70 flex items-center gap-2 text-[11px] text-foreground-muted">
                 <CheckCircle2 className="w-3.5 h-3.5 text-success shrink-0" />
-                <span>Backend parser validates magic file signatures</span>
+                <span>Backend parser validates magic file signatures &amp; dimensions</span>
               </div>
             </CardContent>
           </Card>

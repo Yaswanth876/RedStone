@@ -117,6 +117,23 @@ async function extractPdf(buffer, warnings) {
   }
 }
 
+import { preprocessImageForOcr, verifyImageSignature } from "./image-processor.js";
+import { ocrEngine } from "./ocr-engine.js";
+import { parseTimetableFromOcr } from "./timetable-ocr-parser.js";
+
+const IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".webp"]);
+
+export async function extractTimetableFromImage(buffer, extension) {
+  // 1. Validate image metadata and preprocess for OCR
+  const { processedBuffer } = await preprocessImageForOcr(buffer);
+
+  // 2. Perform OCR recognition with serialized worker
+  const ocrResult = await ocrEngine.recognize(processedBuffer);
+
+  // 3. Parse timetable candidates from OCR output
+  return parseTimetableFromOcr(ocrResult);
+}
+
 export async function extractTimetable(buffer, extension) {
   const warnings = [];
   let entries = [];
@@ -127,6 +144,10 @@ export async function extractTimetable(buffer, extension) {
     const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
     if (!firstSheet) throw new Error("Spreadsheet contains no worksheets");
     entries = parseRows(XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: "" }), warnings);
+  } else if (IMAGE_EXTENSIONS.has(extension)) {
+    const imageResult = await extractTimetableFromImage(buffer, extension);
+    entries = imageResult.entries;
+    warnings.push(...imageResult.warnings);
   } else {
     entries = await extractPdf(buffer, warnings);
   }
@@ -139,5 +160,7 @@ export async function extractTimetable(buffer, extension) {
 export function fileSignatureMatches(buffer, extension) {
   if (extension === ".pdf") return buffer.subarray(0, 5).toString("ascii") === "%PDF-";
   if (extension === ".xlsx") return buffer.subarray(0, 2).toString("ascii") === "PK";
+  if (IMAGE_EXTENSIONS.has(extension)) return verifyImageSignature(buffer, extension);
   return buffer.length > 0 && !buffer.subarray(0, 100).includes(0);
 }
+

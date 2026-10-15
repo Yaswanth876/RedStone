@@ -16,9 +16,12 @@ import { apiClient, ApiError } from './api.js';
 export const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10,485,760 bytes
 
 /**
- * Allowed file extensions matching backend configuration (.pdf, .csv, .xlsx).
+ * Allowed file extensions matching backend configuration.
  */
-export const ALLOWED_EXTENSIONS = ['.pdf', '.csv', '.xlsx'];
+export const ALLOWED_EXTENSIONS = [
+  '.pdf', '.csv', '.xlsx',
+  '.png', '.jpg', '.jpeg', '.webp',
+];
 
 /**
  * Allowed MIME types accepted by backend fileFilter.
@@ -30,13 +33,16 @@ export const ALLOWED_MIME_TYPES = [
   'application/vnd.ms-excel',
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   'text/plain',
+  'image/png',
+  'image/jpeg',
+  'image/webp',
 ];
 
 /**
  * Accept attribute string for HTML file input.
  */
 export const ACCEPTED_FILE_TYPES_STRING =
-  '.pdf,.csv,.xlsx,application/pdf,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+  '.pdf,.csv,.xlsx,.png,.jpg,.jpeg,.webp,application/pdf,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,image/png,image/jpeg,image/webp';
 
 /**
  * Session storage key for persisting candidate entries for Module 5 review handoff.
@@ -62,6 +68,17 @@ export function formatFileSize(bytes) {
 }
 
 /**
+ * Check if the file is an image.
+ * @param {File|string} fileOrName
+ * @returns {boolean}
+ */
+export function isImageFile(fileOrName) {
+  const name = typeof fileOrName === 'string' ? fileOrName : fileOrName?.name || '';
+  const ext = name.slice(name.lastIndexOf('.')).toLowerCase();
+  return ['.png', '.jpg', '.jpeg', '.webp'].includes(ext);
+}
+
+/**
  * Return a friendly label for the file format.
  * @param {File|string} fileOrName
  * @returns {string}
@@ -76,6 +93,13 @@ export function getFileTypeLabel(fileOrName) {
       return 'CSV Spreadsheet';
     case '.xlsx':
       return 'Excel Workbook';
+    case '.png':
+      return 'PNG Image';
+    case '.jpg':
+    case '.jpeg':
+      return 'JPEG Image';
+    case '.webp':
+      return 'WebP Image';
     default:
       return 'Document';
   }
@@ -88,7 +112,7 @@ export function getFileTypeLabel(fileOrName) {
  */
 export function validateFile(file) {
   if (!file) {
-    return { valid: false, error: 'Please select a timetable document to upload.' };
+    return { valid: false, error: 'Please select a timetable document or image to upload.' };
   }
 
   const filename = file.name || '';
@@ -96,7 +120,7 @@ export function validateFile(file) {
   if (extIndex === -1) {
     return {
       valid: false,
-      error: 'The file has no file extension. Supported formats: .pdf, .csv, .xlsx.',
+      error: 'The file has no file extension. Supported formats: .pdf, .csv, .xlsx, .png, .jpg, .webp.',
     };
   }
 
@@ -104,7 +128,7 @@ export function validateFile(file) {
   if (!ALLOWED_EXTENSIONS.includes(ext)) {
     return {
       valid: false,
-      error: `Unsupported file format (${ext}). Supported formats are PDF (.pdf), CSV (.csv), and Excel (.xlsx).`,
+      error: `Unsupported file format (${ext}). Supported formats are PDF (.pdf), Excel (.xlsx), CSV (.csv), and Images (.png, .jpg, .webp).`,
     };
   }
 

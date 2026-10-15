@@ -10,11 +10,15 @@ const router = Router({ mergeParams: true });
 router.use(requireAuth);
 
 const maxFileSize = Number(process.env.UPLOAD_MAX_BYTES) || 10 * 1024 * 1024;
-const allowedExtensions = new Set([".pdf", ".csv", ".xlsx"]);
+const allowedExtensions = new Set([
+  ".pdf", ".csv", ".xlsx",
+  ".png", ".jpg", ".jpeg", ".webp",
+]);
 const allowedMimes = new Set([
   "application/pdf", "text/csv", "application/csv", "application/vnd.ms-excel",
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   "application/octet-stream", "text/plain",
+  "image/png", "image/jpeg", "image/webp",
 ]);
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -73,7 +77,22 @@ router.post("/upload", (req, res, next) => upload.single("file")(req, res, (erro
       });
     } catch (error) {
       console.error("Timetable extraction failed:", error);
-      return res.status(422).json({ error: "The file could not be read or its layout is unsupported", warnings: ["Manual entry or OCR may be required"] });
+      if (error.code === "OCR_TIMEOUT") {
+        return res.status(504).json({
+          error: "OCR processing timed out. Please try uploading a smaller or clearer image.",
+          warnings: ["Image processing took too long to complete"],
+        });
+      }
+      if (error.status) {
+        return res.status(error.status).json({
+          error: error.message,
+          warnings: error.warnings || [],
+        });
+      }
+      return res.status(422).json({
+        error: "The file could not be read or its layout is unsupported",
+        warnings: ["Manual entry or OCR review may be required"],
+      });
     }
   } catch (error) {
     console.error("Timetable upload failed:", error);

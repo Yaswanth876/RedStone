@@ -6,32 +6,33 @@ rule_files:
   - "alert.rules.yml"
 
 scrape_configs:
-  # Local development scrape target
-  - job_name: "redstone-api-local"
+  # Containerized backend target
+  - job_name: "redstone-api-docker"
     scrape_interval: 10s
     metrics_path: "/metrics"
     static_configs:
-      - targets: ["host.docker.internal:4000", "localhost:4000"]
+      - targets: ["backend:4000"]
+        labels:
+          environment: "docker"
+          service: "redstone-backend"
+
+  # Local host scrape target fallback
+  - job_name: "redstone-api-host"
+    scrape_interval: 10s
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["host.docker.internal:4000"]
         labels:
           environment: "development"
           service: "redstone-backend"
 
-  # Production Render deployed scrape target (replace host with your Render app domain)
+  # Production Render deployed scrape target
   - job_name: "redstone-api-render"
     scrape_interval: 15s
     scheme: "https"
     metrics_path: "/metrics"
-    # If METRICS_TOKEN is set on Render, uncomment the bearer_token line or pass via header
-    # bearer_token: "YOUR_METRICS_TOKEN"
     static_configs:
       - targets: ["redstone-ugwp.onrender.com"]
         labels:
           environment: "production"
           service: "redstone-backend"
-
-# Optional: Grafana Cloud remote_write integration
-# remote_write:
-#   - url: "<Your Grafana Cloud Prometheus remote_write URL>"
-#     basic_auth:
-#       username: "<Your Grafana Cloud Prometheus Instance ID>"
-#       password: "<Your Grafana Cloud Access Policy Token>"
